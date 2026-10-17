@@ -1,0 +1,9 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: load-generator
+
+order-service:
+  url: http://localhost:8081/api/orders
