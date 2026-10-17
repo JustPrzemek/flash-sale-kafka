@@ -1,5 +1,5 @@
-# 🎟️ High-Throughput Ticket Booking System (Flash Sale)
-> **An Event-Driven Microservices Learning Project powered by Apache Kafka (KRaft), Spring Boot 3, and PostgreSQL.**
+# High-Throughput Ticket Booking System (Flash Sale)
+> An Event-Driven Microservices Learning Project powered by Apache Kafka (KRaft), Spring Boot 3, and PostgreSQL.
 
 [![Java 21](https://img.shields.io/badge/Java-21-orange.svg)](https://www.oracle.com/java/)
 [![Spring Boot 3.4](https://img.shields.io/badge/Spring%20Boot-3.4.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
@@ -8,17 +8,17 @@
 
 ---
 
-## 📖 Project Overview
+## Project Overview
 
-This repository is a comprehensive, hands-on architectural project designed to master **Apache Kafka**, **Event-Driven Architecture (EDA)**, and **Multi-Module Microservices** in Spring Boot.
+This repository is a hands-on architectural project created to explore and practice **Apache Kafka**, **Event-Driven Architecture (EDA)**, and **Multi-Module Microservices** using modern Spring Boot.
 
 ### The Business Scenario: High-Throughput Flash Sale
-Imagine a concert ticketing platform (e.g., Taylor Swift tour or stadium final) where **thousands of users attempt to reserve seats within the exact same minute**. 
-Instead of relying on synchronous, blocking HTTP calls that easily crash under load, this project implements a resilient, distributed, event-driven pipeline using Kafka to decouple services, guarantee ordering, and eliminate race conditions.
+Imagine a high-demand ticketing platform (such as a major concert tour or championship final) where **thousands of users attempt to reserve seats within the exact same minute**. 
+Instead of relying on synchronous, blocking HTTP calls that easily fail under high concurrency, this project implements an asynchronous, distributed event-driven pipeline using Kafka to decouple services, guarantee ordering, and eliminate race conditions.
 
 ---
 
-## 🏗️ Architecture & Event Flow
+## Architecture & Event Flow
 
 ```text
                       [ Client / Load Generator ]
@@ -27,10 +27,10 @@ Instead of relying on synchronous, blocking HTTP calls that easily crash under l
                                    ▼
         ┌─────────────────────────────────────────────────────┐
         │                 ORDER SERVICE (8081)                │
-        │  • REST API Endpoint (202 Accepted)                 │
-        │  • PostgreSQL DB (Status: PENDING)                  │
-        │  • MapStruct DTO-to-Event conversion                │
-        │  • Kafka Producer (Partition Key = eventId)         │
+        │  - REST API Endpoint (202 Accepted)                 │
+        │  - PostgreSQL DB (Status: PENDING)                  │
+        │  - MapStruct DTO-to-Event conversion                │
+        │  - Kafka Producer (Partition Key = eventId)         │
         └──────────────────────────┬──────────────────────────┘
                                    │
                                    │ 2. OrderPlacedEvent
@@ -44,9 +44,9 @@ Instead of relying on synchronous, blocking HTTP calls that easily crash under l
                                    ▼
         ┌─────────────────────────────────────────────────────┐
         │                PAYMENT SERVICE (8082)               │
-        │  • Consumer Group: payment-processors               │
-        │  • Idempotency Deduplication (prevent double charge)│
-        │  • Non-blocking Retry & Dead Letter Topic (DLT)     │
+        │  - Consumer Group: payment-processors               │
+        │  - Idempotency Deduplication (prevent double charge)│
+        │  - Non-blocking Retry & Dead Letter Topic (DLT)     │
         └──────────────────────────┬──────────────────────────┘
                                    │
                                    │ 4. PaymentCompletedEvent
@@ -59,25 +59,25 @@ Instead of relying on synchronous, blocking HTTP calls that easily crash under l
                                    ▼
         ┌─────────────────────────────────────────────────────┐
         │             NOTIFICATION SERVICE (8083)             │
-        │  • Consumer Group: notification-dispatchers         │
-        │  • Generates PDF ticket and sends confirmation email│
+        │  - Consumer Group: notification-dispatchers         │
+        │  - Generates PDF ticket and sends confirmation email│
         └─────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 💡 Key Architectural Concepts Covered
+## Key Architectural Concepts
 
-* **Event-Driven Choreography**: Services are completely decoupled. `order-service` does not know `payment-service` exists; they communicate strictly through immutable events.
+* **Event-Driven Choreography**: Services are completely decoupled. `order-service` has no direct dependency on `payment-service`; services communicate strictly through immutable events.
 * **Partitioning & Strict Ordering**: Messages are partitioned by `eventId`. All ticket purchases for the same event land on the **same Kafka partition**, ensuring strictly sequential FIFO processing without locking the entire database.
-* **Modern Kafka KRaft Mode**: No ZooKeeper required! Runs natively on the modern Raft consensus protocol.
+* **Modern Kafka KRaft Mode**: No ZooKeeper required. Runs natively on the modern Raft consensus protocol.
 * **Consumer Group Scaling**: Topics are configured with 6 partitions, allowing horizontal scaling up to 6 parallel consumer instances.
-* **Resilience & DLT (Dead Letter Topic)**: Failed events (e.g., rejected payments, invalid payloads) are retried with exponential backoff and routed to a dedicated DLT instead of blocking healthy traffic (*Head-of-Line Blocking*).
-* **Consumer Idempotency**: Prevents duplicate charges if network partitions cause event re-deliveries.
+* **Resilience & DLT (Dead Letter Topic)**: Failed events (e.g., rejected payments, invalid payloads) are retried with exponential backoff and routed to a dedicated DLT instead of blocking healthy traffic (Head-of-Line Blocking).
+* **Consumer Idempotency**: Prevents duplicate charges if network retries cause event re-deliveries.
 
 ---
 
-## 📦 Multi-Module Structure
+## Multi-Module Structure
 
 ```text
 flash-sale-kafka/
@@ -90,7 +90,7 @@ flash-sale-kafka/
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 * **Language**: Java 21 LTS
 * **Framework**: Spring Boot 3.4.5
@@ -102,7 +102,7 @@ flash-sale-kafka/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Prerequisites
 * JDK 21+
@@ -135,16 +135,16 @@ curl -X POST http://localhost:8081/api/orders \
   -H "Content-Type: application/json" \
   -d '{
     "customerId": "user-42",
-    "eventId": "taylor-swift-waw",
+    "eventId": "concert-waw-2026",
     "seatNumber": "A12",
     "amount": 250.00
   }'
 ```
-Response: `202 ACCEPTED` with a generated `UUID` tracking ID! Check [Kafka-UI](http://localhost:9080) under `order-placed-events` to watch your event live.
+Response: `202 ACCEPTED` with a generated `UUID` tracking ID. You can inspect the message in [Kafka-UI](http://localhost:9080) under the `order-placed-events` topic.
 
 ---
 
-## 📌 Learning Roadmap
+## Learning Roadmap
 
 - [x] **Phase 1**: Project skeleton, multi-module setup, Docker Compose (KRaft Kafka + PostgreSQL + Kafka-UI).
 - [x] **Phase 2**: `order-service` REST API, MapStruct, and Kafka producer with `eventId` partition key.
@@ -155,5 +155,5 @@ Response: `202 ACCEPTED` with a generated `UUID` tracking ID! Check [Kafka-UI](h
 
 ---
 
-## 👨‍💻 Author
+## Author
 Hands-on educational project exploring enterprise event-driven architectures with Apache Kafka and Spring Boot.
